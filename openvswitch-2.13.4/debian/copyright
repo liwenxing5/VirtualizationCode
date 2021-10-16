@@ -1,0 +1,43 @@
+The original sources for this package can be found at:
+
+        http://openvswitch.org/
+
+Upstream Authors (from AUTHORS):
+
+  ..
+        Licensed under the Apache License, Version 2.0 (the "License"); you may
+        not use this file except in compliance with the License. You may obtain
+        a copy of the License at
+The original sources for this package can be found at:
+
+        http://openvswitch.org/
+
+Upstream Authors (from AUTHORS):
+
+%AUTHORS%
+
+Upstream Copyright Holders:
+
+        6WIND S.A.
+        Alexandru Copot <alex.mihai.c@gmail.com>, with support from IXIA.
+        Alexey I. Froloff.
+        Amir Vadai <amir@vadai.me>
+        Arm Limited
+        Avaya, Inc.
+        Benjamin Kosnik <bkoz@redhat.com>
+        Cisco Systems, Inc
+        Citrix Systems, Inc.
+        Cloudbase Solutions Srl
+        Cumulus Netowkrs
+        Daniel Baluta <dbaluta@ixiacom.com>
+        Daniel Hartmeier
+        Dan Nicholson <dbn.lists@gmail.com>
+        Dustin J. Mitchell <dustin@zmanda.com>
+        Ed Maste
+        Eelco Chaudron
+        Ericsson AB
+        Free Software Foundation, Inc.,
+        Gaetano Catalli
+        Gary S. Brown.
+        Geoffrey Wossum (gwossum@acm.org)
+        Gleb Smirnoff <glebius@FreeBSD.org>

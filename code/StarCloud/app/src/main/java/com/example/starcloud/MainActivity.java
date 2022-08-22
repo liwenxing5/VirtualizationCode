@@ -8,7 +8,6 @@ import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -49,8 +48,41 @@ public class MainActivity extends AppCompatActivity {
     String SYSPATH = null;
     Socket cliSocket = null;
     ListView fileListView = null;
+    ArrayList<ItemContent> itemList = new ArrayList<ItemContent>();
     ArrayList<String> fileList = new ArrayList<String>();
     private ActivityMainBinding binding;
+
+    void updateItemList() {
+        itemList.clear();
+        for (int i = 0; i < fileList.size(); i++)
+        {
+            int icon_id;
+            if (fileList.get(i).contains("/")) {
+                icon_id = R.drawable.file_icon;
+            } else if (fileList.get(i).contains(".doc")) {
+                icon_id = R.drawable.word_icon;
+            } else if (fileList.get(i).contains(".iso")) {
+                icon_id = R.drawable.iso_icon;
+            } else if (fileList.get(i).contains(".jpg")) {
+                icon_id = R.drawable.image_icon;
+            } else if (fileList.get(i).contains(".mp3")) {
+                icon_id = R.drawable.music_icon;
+            } else if (fileList.get(i).contains(".mp4")) {
+                icon_id = R.drawable.video_icon;
+            } else if (fileList.get(i).contains(".pdf")) {
+                icon_id = R.drawable.pdf_icon;
+            } else if (fileList.get(i).contains(".xls")) {
+                icon_id = R.drawable.excel_icon;
+            } else if (fileList.get(i).contains(".ppt")) {
+                icon_id = R.drawable.ppt_icon;
+            } else if (fileList.get(i).contains(".zip")) {
+                icon_id = R.drawable.packet_icon;
+            } else {
+                icon_id = R.drawable.other_icon;
+            }
+            itemList.add(new ItemContent(fileList.get(i), icon_id));
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,31 +113,28 @@ public class MainActivity extends AppCompatActivity {
         listFinish = false;
         new httpListThread().start();
         while (listFinish == false);
+
+
+        updateItemList();
         fileListView = (ListView)findViewById(R.id.FileListView);
-        ArrayAdapter<String> adapter = new ArrayAdapter<>
-                (MainActivity.this, android.R.layout.simple_list_item_1, fileList);
+        ListViewAdapter adapter = new ListViewAdapter(MainActivity.this, R.layout.listview_item, itemList);
         fileListView.setAdapter(adapter);
         fileListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                DOWNLOAD_FILE = adapter.getItem(i);
-
+                ItemContent itemTmp = (ItemContent)adapter.getItem(i);
+                DOWNLOAD_FILE = itemTmp.getName();
                 if (DOWNLOAD_FILE.contains("/")){
                     listFinish = false;
-                    LISTURL = WEBURL + fileList.get(0) + DOWNLOAD_FILE;
-                    System.out.println("===================");
-                    System.out.println(LISTURL);
-                    System.out.println("===================");
+                    LISTURL = WEBURL + itemList.get(0).getName() + DOWNLOAD_FILE;
                     new httpListThread().start();
                     while (listFinish == false);
+                    updateItemList();
                     adapter.notifyDataSetChanged();
                 } else {
-                    DOWNLOAD_URL = WEBURL + fileList.get(0) + DOWNLOAD_FILE;
+                    DOWNLOAD_URL = WEBURL + itemList.get(0).getName() + DOWNLOAD_FILE;
                     retStr = "";
                     retCode = SUCCESS;
-                    System.out.println("===================");
-                    System.out.println(DOWNLOAD_URL);
-                    System.out.println("===================");
                     httpDownloadThread dt = new httpDownloadThread();
                     dt.start();
                     downloadFinish = false;
@@ -168,7 +197,6 @@ public class MainActivity extends AppCompatActivity {
                 fileList.clear();
                 int size1 = content.indexOf("<title>Index of ");
                 int size2 = content.indexOf("</title>");
-                System.out.println(content.substring(size1+16, size2)+"===========\n");
                 fileList.add(content.substring(size1+16, size2));
 
                 while (true)
@@ -181,11 +209,6 @@ public class MainActivity extends AppCompatActivity {
                     String tmp = content.substring(size1 + 9, size2);
                     content = content.substring(size2 + 4);
                     fileList.add(tmp.substring(tmp.indexOf(">") + 1));
-                    System.out.println(tmp+"==\n");
-                }
-
-                for (int i = fileList.size(); i <= 0; i++) {
-                    System.out.println(fileList.get(i)+"\n");
                 }
                 listFinish = true;
             } catch (Exception e) {

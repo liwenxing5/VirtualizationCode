@@ -7,8 +7,10 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -35,9 +37,15 @@ public class MainActivity extends AppCompatActivity {
     int EXIST = 1;
     int FAIL = 2;
     int retCode = 0;
+    Boolean listFinish = false;
+    Boolean downloadFinish = false;
     String WEBURL = "http://5db2289.r3.cpolar.top";
+    String LISTURL = WEBURL;
+    String DOWNLOAD_URL = null;
+    String DOWNLOAD_FILE = null;
     String retStr = "";
     String ROOTPATH = null;
+    String DOWNLOADPATH = null;
     String SYSPATH = null;
     Socket cliSocket = null;
     ListView fileListView = null;
@@ -54,18 +62,15 @@ public class MainActivity extends AppCompatActivity {
 
         ROOTPATH = Environment.getExternalStorageDirectory().getAbsolutePath()+"/StarCloud/";
         SYSPATH = ROOTPATH+"sys/";
+        DOWNLOADPATH = ROOTPATH+"download/";
+        new File(ROOTPATH).mkdir();
+        new File(SYSPATH).mkdir();
+        new File(DOWNLOADPATH).mkdir();
+
         binding.fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Uri uri = Uri.parse("content://com.android.externalstorage.documents/document/primary:%2fStarCloud%2f");
-                new File(ROOTPATH).mkdir();
-                new File(SYSPATH).mkdir();
-
-                httpDownloadThread th = new httpDownloadThread();
-                retStr = "";
-                retCode = SUCCESS;
-                th.start();
-
+                Uri uri = Uri.parse("content://com.android.externalstorage.documents/document/primary:%2fStarCloud%2fdownload%2f");
                 Intent localIntent = new Intent(Intent.ACTION_GET_CONTENT);
                 localIntent.setType("*/*");
                 localIntent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, uri);
@@ -73,8 +78,42 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        fileListView = (ListView)findViewById(R.id.FileListView);
+        listFinish = false;
         new httpListThread().start();
+        while (listFinish == false);
+        fileListView = (ListView)findViewById(R.id.FileListView);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>
+                (MainActivity.this, android.R.layout.simple_list_item_1, fileList);
+        fileListView.setAdapter(adapter);
+        fileListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                DOWNLOAD_FILE = adapter.getItem(i);
+
+                if (DOWNLOAD_FILE.contains("/")){
+                    listFinish = false;
+                    LISTURL = WEBURL + fileList.get(0) + DOWNLOAD_FILE;
+                    System.out.println("===================");
+                    System.out.println(LISTURL);
+                    System.out.println("===================");
+                    new httpListThread().start();
+                    while (listFinish == false);
+                    adapter.notifyDataSetChanged();
+                } else {
+                    DOWNLOAD_URL = WEBURL + fileList.get(0) + DOWNLOAD_FILE;
+                    retStr = "";
+                    retCode = SUCCESS;
+                    System.out.println("===================");
+                    System.out.println(DOWNLOAD_URL);
+                    System.out.println("===================");
+                    httpDownloadThread dt = new httpDownloadThread();
+                    dt.start();
+                    downloadFinish = false;
+                    while(downloadFinish == false);
+                    Toast.makeText(MainActivity.this,retStr,Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
 
     @Override
@@ -115,8 +154,7 @@ public class MainActivity extends AppCompatActivity {
             String content = "";
 
             try {
-                System.out.println("==========1====");
-                URL url = new URL(WEBURL);
+                URL url = new URL(LISTURL);
                 conn = (HttpURLConnection)url.openConnection();
                 input = conn.getInputStream();
                 InputStreamReader ir = new InputStreamReader(input);
@@ -126,12 +164,17 @@ public class MainActivity extends AppCompatActivity {
                 while((line = reader.readLine()) != null) {
                     content = content + line + "\n";
                 }
-                System.out.println("========2======");
+
                 fileList.clear();
+                int size1 = content.indexOf("<title>Index of ");
+                int size2 = content.indexOf("</title>");
+                System.out.println(content.substring(size1+16, size2)+"===========\n");
+                fileList.add(content.substring(size1+16, size2));
+
                 while (true)
                 {
-                    int size1 = content.indexOf("<a href=\"");
-                    int size2 = content.indexOf("</a>");
+                    size1 = content.indexOf("<a href=\"");
+                    size2 = content.indexOf("</a>");
                     if (size1 < 0|| size2 < 0) {
                         break;
                     }
@@ -144,10 +187,7 @@ public class MainActivity extends AppCompatActivity {
                 for (int i = fileList.size(); i <= 0; i++) {
                     System.out.println(fileList.get(i)+"\n");
                 }
-
-                ArrayAdapter<String> adapter = new ArrayAdapter<>
-                        (MainActivity.this, android.R.layout.simple_list_item_1, fileList);
-                fileListView.setAdapter(adapter);
+                listFinish = true;
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
@@ -167,8 +207,7 @@ public class MainActivity extends AppCompatActivity {
         public void run() {
             super.run();
 
-            String urlStr=WEBURL+"/test.txt";
-            String fileName = ROOTPATH + "test.txt";
+            String fileName = DOWNLOADPATH + DOWNLOAD_FILE;
             OutputStream output = null;
             URL url = null;
             HttpURLConnection conn = null;
@@ -176,13 +215,14 @@ public class MainActivity extends AppCompatActivity {
             File file = null;
 
             try {
-                url = new URL(urlStr);
+                url = new URL(DOWNLOAD_URL);
                 conn = (HttpURLConnection)url.openConnection();
                 input = conn.getInputStream();
                 file = new File(fileName);
                 if (file.exists())  {
                     retStr = "文件已存在" + fileName;
                     retCode = EXIST;
+                    downloadFinish = true;
                     return;
                 }
 
@@ -210,6 +250,8 @@ public class MainActivity extends AppCompatActivity {
                     retCode = FAIL;
                     retStr = "关闭链接失败,文件存为："+fileName;
                     e.printStackTrace();
+                } finally {
+                    downloadFinish = true;
                 }
             }
         }

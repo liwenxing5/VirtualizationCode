@@ -2,6 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:gravity="top|left"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <ImageView
@@ -12,11 +14,13 @@
 
     <TextView
         android:id="@+id/item_name"
-        android:textStyle="bold"
-        android:textSize="20dp"
-        android:layout_gravity="center"
+        android:gravity="top"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Name" />
+        android:layout_gravity="center"
+        android:text="Name"
+        android:textSize="20dp"
+        android:textColor="@color/black"
+        android:textStyle="bold" />
 
 </LinearLayout>

@@ -1,11 +1,15 @@
 package com.example.starcloud;
 
+import static androidx.constraintlayout.motion.utils.Oscillator.TAG;
+
 import android.Manifest;
+import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.DocumentsContract;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -31,17 +35,18 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
-    int FILE_REQ_CODE = 10;
+    int FILE_REQ_CODE = 1;
     int SUCCESS = 0;
     int EXIST = 1;
     int FAIL = 2;
     int retCode = 0;
     Boolean listFinish = false;
     Boolean downloadFinish = false;
-    String WEBURL = "http://5db2289.r3.cpolar.top";
+    String WEBURL = "http://starcloud.5gzvip.91tunnel.com";
     String LISTURL = WEBURL;
     String DOWNLOAD_URL = null;
     String DOWNLOAD_FILE = null;
+    String SEL_FILE_PATH = null;
     String retStr = "";
     String ROOTPATH = null;
     String DOWNLOADPATH = null;
@@ -104,6 +109,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Uri uri = Uri.parse("content://com.android.externalstorage.documents/document/primary:%2fStarCloud%2fdownload%2f");
                 Intent localIntent = new Intent(Intent.ACTION_GET_CONTENT);
+                localIntent.addCategory(Intent.CATEGORY_OPENABLE);
                 localIntent.setType("*/*");
                 localIntent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, uri);
                 startActivityForResult(localIntent, FILE_REQ_CODE);
@@ -148,32 +154,34 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == FILE_REQ_CODE && resultCode == RESULT_OK) {
-            if (data.getData() != null) {
-                try {
-                    /*
-                    Uri uri = data.getData();
-                    String path = uri.getPath().toString();
+        if(resultCode== Activity.RESULT_OK)
+        {
+            /**
+             * 当选择的图片不为空的话，在获取到图片的途径
+             */
+            Uri uri = data.getData();
+            Log.e(TAG, "uri = "+ uri);
 
-                    TextView tView = new TextView(this);
-                    tView.setTextSize(30);
-                    tView.setText(path+"---"+rootPath);
-                    tView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-                    LinearLayout layout = new LinearLayout(this);
-                    layout.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT));
-                    layout.setOrientation(LinearLayout.VERTICAL);
-                    layout.addView(tView);
-                    setContentView(layout);*/
-
-                } catch (Exception e) {
-
+            try {
+                String path = FilesUtils.getPath(getBaseContext(), uri);
+                if(path.endsWith("jpg")||path.endsWith("png") ||path.endsWith("jpeg"))
+                {
+                    SEL_FILE_PATH = path;
+                    //Bitmap bitmap = BitmapFactory.decodeStream(cr.openInputStream(uri));
+                    System.out.println("=========" + SEL_FILE_PATH);
+                    new httpUploadThread().start();
+                    //imageView.setImageBitmap(bitmap);
                 }
+            } catch (Exception e) {
+                System.out.println("====NO=====" );
+                e.printStackTrace();
             }
         }
+
+        super.onActivityResult(requestCode, resultCode, data);
     }
 
-    class  httpListThread extends Thread {
+    class httpListThread extends Thread {
         @Override
         public void run() {
             super.run();
@@ -224,8 +232,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    class httpUploadThread extends Thread {
+        @Override
+        public void run() {
+            super.run();
+            File file = new File(SEL_FILE_PATH);
+            String request = UploadUtil.uploadFile(file, WEBURL+"/");
+            System.out.println("===" + request + SEL_FILE_PATH);
+        }
+    }
 
-    class  httpDownloadThread extends Thread {
+    class httpDownloadThread extends Thread {
         @Override
         public void run() {
             super.run();

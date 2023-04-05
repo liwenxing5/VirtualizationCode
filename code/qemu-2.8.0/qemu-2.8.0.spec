@@ -1,4 +1,4 @@
-Name:       qemu-kvm		
+Name:       qemu		
 Version:    2.8.0	
 Release:    1%{?dist}
 Summary:    my qemu

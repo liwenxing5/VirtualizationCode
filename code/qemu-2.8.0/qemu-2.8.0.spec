@@ -29,8 +29,9 @@ make install
 %files
 %doc
 /bin/*
-/etc/*
+/var/*
 /libexec/*
+/share/*
 
 
 %changelog

@@ -33,6 +33,7 @@ ninja install -C build
 /lib64/*
 /include/*
 /share/*
+/kernel/*
 
 %changelog
 

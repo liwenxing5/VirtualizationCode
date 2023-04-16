@@ -36,5 +36,5 @@ custom_target('rte_kni',
 		'modules'],
 	depends: kni_mkfile,
 	install: true,
-	install_dir: kernel_dir + '/extra/dpdk',
+	install_dir: get_option('prefix') + '/kernel/',
 	build_by_default: get_option('enable_kmods'))

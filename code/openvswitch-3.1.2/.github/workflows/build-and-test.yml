@@ -1,0 +1,299 @@
+name: Build and Test
+
+on: [push, pull_request]
+
+jobs:
+  build-dpdk:
+    env:
+      dependencies: gcc libnuma-dev ninja-build
+      CC: gcc
+      DPDK_GIT: https://dpdk.org/git/dpdk-stable
+      DPDK_VER: 22.11.1
+    name: dpdk gcc
+    outputs:
+      dpdk_key: ${{ steps.gen_dpdk_key.outputs.key }}
+    runs-on: ubuntu-20.04
+    timeout-minutes: 30
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+
+    - name: update PATH
+      run:  |
+        echo "$HOME/bin"        >> $GITHUB_PATH
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: create ci signature file for the dpdk cache key
+      # This will collect most of DPDK related lines, so hash will be different
+      # if something changed in a way we're building DPDK including DPDK_VER.
+      # This also allows us to use cache from any branch as long as version
+      # and a way we're building DPDK stays the same.
+      run:  |
+        grep -irE 'RTE_|DPDK|meson|ninja' .ci/dpdk-* > dpdk-ci-signature
+        grep -rwE 'DPDK_GIT|DPDK_VER' .github/ >> dpdk-ci-signature
+        if [ "${DPDK_VER##refs/*/}" != "${DPDK_VER}" ]; then
+            git ls-remote --heads $DPDK_GIT $DPDK_VER >> dpdk-ci-signature
+        fi
+        cat dpdk-ci-signature
+
+    - name: generate ci DPDK key
+      id: gen_dpdk_key
+      env:
+        ci_key: ${{ hashFiles('dpdk-ci-signature') }}
+      run:  echo 'key=dpdk-${{ env.ci_key }}' >> $GITHUB_OUTPUT
+
+    - name: cache
+      id: dpdk_cache
+      uses: actions/cache@v3
+      with:
+        path: dpdk-dir
+        key:  ${{ steps.gen_dpdk_key.outputs.key }}
+
+    - name: set up python
+      if: steps.dpdk_cache.outputs.cache-hit != 'true'
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: update APT cache
+      if: steps.dpdk_cache.outputs.cache-hit != 'true'
+      run:  sudo apt update || true
+    - name: install common dependencies
+      if: steps.dpdk_cache.outputs.cache-hit != 'true'
+      run:  sudo apt install -y ${{ env.dependencies }}
+
+    - name: prepare
+      if: steps.dpdk_cache.outputs.cache-hit != 'true'
+      run:  ./.ci/dpdk-prepare.sh
+
+    - name: build
+      if: steps.dpdk_cache.outputs.cache-hit != 'true'
+      run:  ./.ci/dpdk-build.sh
+
+  build-linux:
+    needs: build-dpdk
+    env:
+      dependencies: |
+        automake libtool gcc bc libjemalloc2 libjemalloc-dev libssl-dev \
+        llvm-dev libnuma-dev libpcap-dev selinux-policy-dev libbpf-dev
+      ASAN:        ${{ matrix.asan }}
+      UBSAN:       ${{ matrix.ubsan }}
+      CC:          ${{ matrix.compiler }}
+      DPDK:        ${{ matrix.dpdk }}
+      DPDK_SHARED: ${{ matrix.dpdk_shared }}
+      LIBS:        ${{ matrix.libs }}
+      M32:         ${{ matrix.m32 }}
+      OPTS:        ${{ matrix.opts }}
+      TESTSUITE:   ${{ matrix.testsuite }}
+
+    name: linux ${{ join(matrix.*, ' ') }}
+    runs-on: ubuntu-20.04
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - compiler:     gcc
+            opts:         --disable-ssl
+          - compiler:     clang
+            opts:         --disable-ssl
+
+          - compiler:     gcc
+            testsuite:    test
+          - compiler:     clang
+            testsuite:    test
+            asan:         asan
+          - compiler:     clang
+            testsuite:    test
+            ubsan:        ubsan
+
+          - compiler:     gcc
+            testsuite:    test
+            opts:         --enable-shared
+          - compiler:     clang
+            testsuite:    test
+            opts:         --enable-shared
+
+          - compiler:     gcc
+            testsuite:    test
+            dpdk:         dpdk
+          - compiler:     clang
+            testsuite:    test
+            dpdk:         dpdk
+
+          - compiler:     gcc
+            testsuite:    test
+            libs:         -ljemalloc
+          - compiler:     clang
+            testsuite:    test
+            libs:         -ljemalloc
+
+          - compiler:     gcc
+            opts:         --enable-afxdp
+          - compiler:     clang
+            opts:         --enable-afxdp
+
+          - compiler:     gcc
+            dpdk:         dpdk
+            opts:         --enable-shared
+          - compiler:     clang
+            dpdk:         dpdk
+            opts:         --enable-shared
+
+          - compiler:     gcc
+            dpdk_shared:  dpdk-shared
+          - compiler:     clang
+            dpdk_shared:  dpdk-shared
+
+          - compiler:     gcc
+            dpdk_shared:  dpdk-shared
+            opts:         --enable-shared
+          - compiler:     clang
+            dpdk_shared:  dpdk-shared
+            opts:         --enable-shared
+
+          - compiler:     gcc
+            m32:          m32
+            opts:         --disable-ssl
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+
+    - name: update PATH
+      run:  |
+        echo "$HOME/bin"        >> $GITHUB_PATH
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: set up python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: cache
+      if:   matrix.dpdk != '' || matrix.dpdk_shared != ''
+      uses: actions/cache@v3
+      with:
+        path: dpdk-dir
+        key:  ${{ needs.build-dpdk.outputs.dpdk_key }}
+
+    - name: update APT cache
+      run:  sudo apt update || true
+    - name: install common dependencies
+      run:  sudo apt install -y ${{ env.dependencies }}
+    - name: install libunbound libunwind
+      # GitHub Actions doesn't have 32-bit versions of these libraries.
+      if:   matrix.m32 == ''
+      run:  sudo apt install -y libunbound-dev libunwind-dev
+    - name: install 32-bit libraries
+      if:   matrix.m32 != ''
+      run:  sudo apt install -y gcc-multilib
+
+    - name: prepare
+      run:  ./.ci/linux-prepare.sh
+
+    - name: build
+      run:  ./.ci/linux-build.sh
+
+    - name: copy logs on failure
+      if: failure() || cancelled()
+      run: |
+        # upload-artifact@v2 throws exceptions if it tries to upload socket
+        # files and we could have some socket files in testsuite.dir.
+        # Also, upload-artifact@v2 doesn't work well enough with wildcards.
+        # So, we're just archiving everything here to avoid any issues.
+        mkdir logs
+        cp config.log ./logs/
+        cp -r ./*/_build/sub/tests/testsuite.* ./logs/ || true
+        tar -czvf logs.tgz logs/
+
+    - name: upload logs on failure
+      if: failure() || cancelled()
+      uses: actions/upload-artifact@v3
+      with:
+        name: logs-linux-${{ join(matrix.*, '-') }}
+        path: logs.tgz
+
+  build-osx:
+    env:
+      CC:    clang
+      OPTS:  --disable-ssl
+
+    name:    osx clang --disable-ssl
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+    - name: update PATH
+      run:  |
+        echo "$HOME/bin"        >> $GITHUB_PATH
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+    - name: set up python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    - name: install dependencies
+      run:  brew install automake libtool
+    - name: prepare
+      run:  ./.ci/osx-prepare.sh
+    - name: build
+      run:  ./.ci/osx-build.sh
+    - name: upload logs on failure
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: logs-osx-clang---disable-ssl
+        path: config.log
+
+  build-linux-deb:
+    env:
+      deb_dependencies: |
+        linux-headers-$(uname -r) build-essential fakeroot devscripts equivs
+      DEB_PACKAGE: yes
+      DPDK:        ${{ matrix.dpdk }}
+
+    name: linux deb ${{ matrix.dpdk }} dpdk
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - dpdk: no
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v3
+
+    - name: update PATH
+      run:  |
+        echo "$HOME/bin"        >> $GITHUB_PATH
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: update APT cache
+      run:  sudo apt update || true
+    - name: install dependencies for debian packages
+      run:  sudo apt install -y ${{ env.deb_dependencies }}
+    - name: install dpdk-dev
+      if:   matrix.dpdk != 'no'
+      run:  sudo apt install -y libdpdk-dev
+
+    - name: prepare
+      run:  ./.ci/linux-prepare.sh
+
+    - name: build
+      run:  ./.ci/linux-build.sh
+
+    - name: upload deb packages
+      uses: actions/upload-artifact@v3
+      with:
+        name: deb-packages-${{ matrix.dpdk }}-dpdk
+        path: '/home/runner/work/ovs/*.deb'

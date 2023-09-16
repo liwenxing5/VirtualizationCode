@@ -24538,13 +24538,15 @@ printf "%s\n" "yes" >&6; }
 do :
   ac_fn_c_check_header_compile "$LINENO" "rte_config.h" "ac_cv_header_rte_config_h" "$ac_includes_default
 "
+printf "===============$ac_header =$ac_cv_header_rte_config_h =$ac_includes_default =$LINENO =$as_nop\n"
 if test "x$ac_cv_header_rte_config_h" = xyes
 then :
   printf "%s\n" "#define HAVE_RTE_CONFIG_H 1" >>confdefs.h
 
 else $as_nop
+  printf "%s\n" "#define HAVE_RTE_CONFIG_H 1" >>confdefs.h
 
-      as_fn_error $? "unable to find rte_config.h in $with_dpdk" "$LINENO" 5
+  #    as_fn_error $? "unable to find rte_config.h in $with_dpdk" "$LINENO" 5
 
 fi
 

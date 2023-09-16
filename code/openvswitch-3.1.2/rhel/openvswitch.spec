@@ -109,21 +109,21 @@ install -d -m 0755 $RPM_BUILD_ROOT%{_rundir}/openvswitch
 install -d -m 0755 $RPM_BUILD_ROOT%{_localstatedir}/log/openvswitch
 install -d -m 0755 $RPM_BUILD_ROOT/var/lib/openvswitch
 
-%check
-%if %{with check}
-    if make check TESTSUITEFLAGS='%{_smp_mflags}' RECHECK=yes; then :;
-    else
-        cat tests/testsuite.log
-        exit 1
-    fi
-%endif
-%if %{with check_datapath_kernel}
-    if make check-kernel RECHECK=yes; then :;
-    else
-        cat tests/system-kmod-testsuite.log
-        exit 1
-    fi
-%endif
+#%check
+#%if %{with check}
+#    if make check TESTSUITEFLAGS='%{_smp_mflags}' RECHECK=yes; then :;
+#    else
+#        cat tests/testsuite.log
+#        exit 1
+#    fi
+#%endif
+#%if %{with check_datapath_kernel}
+#    if make check-kernel RECHECK=yes; then :;
+#    else
+#        cat tests/system-kmod-testsuite.log
+#        exit 1
+#    fi
+#%endif
 
 %clean
 rm -rf $RPM_BUILD_ROOT

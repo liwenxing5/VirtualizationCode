@@ -29,6 +29,7 @@ ninja install -C build
 
 %files
 %doc
+/usr/*
 /bin/*
 /lib64/*
 /include/*

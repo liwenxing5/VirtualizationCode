@@ -318,7 +318,7 @@ dpdk_init__(const struct smap *ovs_other_config)
     bool auto_determine = true;
     struct ovs_numa_dump *affinity = NULL;
     struct svec args = SVEC_EMPTY_INITIALIZER;
-
+VLOG_WARN("%s:%d=======start\n", __func__, __LINE__);
     log_stream = fopencookie(NULL, "w+", dpdk_log_func);
     if (log_stream == NULL) {
         VLOG_ERR("Can't redirect DPDK log: %s.", ovs_strerror(errno));
@@ -439,7 +439,7 @@ dpdk_init__(const struct smap *ovs_other_config)
 
     /* We are called from the main thread here */
     RTE_PER_LCORE(_lcore_id) = NON_PMD_CORE_ID;
-
+VLOG_WARN("%s:%d=======end\n", __func__, __LINE__);
     /* Finally, register the dpdk classes */
     netdev_dpdk_register(ovs_other_config);
     netdev_register_flow_api_provider(&netdev_offload_dpdk);

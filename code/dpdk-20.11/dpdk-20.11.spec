@@ -1,6 +1,6 @@
 Name:       dpdk		
 Version:    20.11	
-Release:    1%{?dist}
+Release:    3%{?dist}
 Summary:    my dpdk
 
 Group:      x86
@@ -18,7 +18,8 @@ just for test once
 
 
 %build
-meson build --prefix=%{buildroot}
+#pip3 install pyelftools
+meson --prefix=%{buildroot} -DCONFIG_RTE_LIBRTE_VHOST_NUMA=y build
 cd build
 ninja -j 16
 
@@ -26,15 +27,12 @@ ninja -j 16
 %install
 ninja install -C build
 
-
 %files
 %doc
-/usr/*
-/bin/*
-/lib64/*
 /include/*
 /share/*
+/bin/*
 /kernel/*
-
+/lib64/*
 %changelog
 

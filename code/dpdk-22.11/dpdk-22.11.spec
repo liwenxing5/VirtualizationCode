@@ -19,7 +19,7 @@ just for test once
 
 %build
 #pip3 install pyelftools
-meson --prefix=%{buildroot} -DCONFIG_RTE_LIBRTE_VHOST_NUMA=y build
+meson --prefix=%{buildroot} build
 cd build
 ninja -j 16
 

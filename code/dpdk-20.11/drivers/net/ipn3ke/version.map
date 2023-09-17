@@ -1,9 +1,0 @@
-DPDK_21 {
-	local: *;
-};
-
-EXPERIMENTAL {
-	global:
-
-	ipn3ke_bridge_func;
-};

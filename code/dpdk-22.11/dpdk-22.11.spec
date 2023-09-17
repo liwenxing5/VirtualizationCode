@@ -26,7 +26,8 @@ ninja -j 16
 
 %install
 ninja install -C build
-
+mv %{buildroot}/lib64/dpdk/pmds-23.0/* %{buildroot}/lib64
+rm -rf %{buildroot}/lib64/dpdk
 %files
 %doc
 /include/*

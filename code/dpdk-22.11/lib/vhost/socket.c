@@ -479,7 +479,12 @@ vhost_user_client_reconnect(void *arg __rte_unused)
 				goto remove_fd;
 			}
 			if (ret == -1)
+			{
+				VHOST_LOG_CONFIG(reconn->vsocket->path, ERR,
+					"qisila=================================reconnection for fd %d failed\n",
+					reconn->fd);
 				continue;
+			}
 
 			VHOST_LOG_CONFIG(reconn->vsocket->path, INFO, "connected\n");
 			vhost_user_add_connection(reconn->fd, reconn->vsocket);

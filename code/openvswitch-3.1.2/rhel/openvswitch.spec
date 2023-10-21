@@ -72,7 +72,7 @@ Tailored Open vSwitch SELinux policy
 %build
 #./configure --prefix=/usr --sysconfdir=/etc --localstatedir=%{_localstatedir} \
 #    --libdir=%{_libdir} --enable-ssl --enable-shared
-./configure CPPFLAGS="-I /include -I /usr/include" --prefix=/usr/ --sysconfdir=/etc --localstatedir=/var --libdir=/usr/lib64 --enable-ssl --enable-shared --with-dpdk=shared
+./configure CPPFLAGS="-I /include -I /usr/include" --prefix=/usr/ --sysconfdir=/etc --localstatedir=/var --libdir=/usr/lib64 --enable-ssl --enable-shared --with-dpdk=shared --with-debug
 
 make %{_smp_mflags}
 make selinux-policy

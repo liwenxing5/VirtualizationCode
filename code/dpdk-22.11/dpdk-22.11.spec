@@ -19,7 +19,7 @@ just for test once
 
 %build
 #pip3 install pyelftools
-meson --prefix=%{buildroot} build
+meson  --buildtype debug --prefix=%{buildroot}/usr/ build
 cd build
 ninja -j 16
 
@@ -28,10 +28,10 @@ ninja -j 16
 ninja install -C build
 %files
 %doc
-/include/*
-/share/*
-/bin/*
-/kernel/*
-/lib64/*
+/usr/include/*
+/usr/share/*
+/usr/bin/*
+/usr/kernel/*
+/usr/lib64/*
 %changelog
 

@@ -125,7 +125,7 @@ TAILQ_HEAD_INITIALIZER(solib_list);
 #ifndef RTE_EXEC_ENV_WINDOWS
 /* Default path of external loadable drivers */
 //static const char *default_solib_dir = RTE_EAL_PMD_PATH;
-static const char *default_solib_dir = "/lib64/dpdk/pmds-23.0";
+static const char *default_solib_dir = "/usr/lib64/dpdk/pmds-23.0";
 #endif
 
 /*
@@ -134,7 +134,7 @@ static const char *default_solib_dir = "/lib64/dpdk/pmds-23.0";
  * change to usertools/dpdk-pmdinfo.py
  */
 static const char dpdk_solib_path[] __rte_used =
-"DPDK_PLUGIN_PATH=" "/lib64/dpdk/pmds-23.0";
+"DPDK_PLUGIN_PATH=" "/usr/lib64/dpdk/pmds-23.0";
 //"DPDK_PLUGIN_PATH=" RTE_EAL_PMD_PATH;
 
 TAILQ_HEAD(device_option_list, device_option);

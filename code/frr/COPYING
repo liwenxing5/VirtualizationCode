@@ -1,0 +1,16 @@
+The FRRouting project consists of parts with various licenses.  Any particular
+file's license should be indicated at the top of the file with an SPDX License
+identifier.
+
+The full text of all licenses used can be found in doc/licenses.
+
+The composite work (binary) resulting from compiling FRR is thought to always
+be distributable under GPLv2 or later.  However, please note that this is
+simply an expression of the community's best-effort understanding, it is not a
+legal statement, guarantee, or advice of any kind.  If necessary, please
+familiarize yourself with the specifics and/or consult a lawyer.
+
+Also please be advised that FRR's documentation is, for historical reasons,
+licensed under a custom (but relatively permissive) license.  This license
+dates back to the GNU Zebra project and cannot easily be changed into something
+more common, short of rewriting the entire documentation.
